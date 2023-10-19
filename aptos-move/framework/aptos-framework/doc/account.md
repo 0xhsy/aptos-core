@@ -927,7 +927,7 @@ is returned. This way, the caller of this function can publish additional resour
 
 
 <pre><code><b>fun</b> <a href="account.md#0x1_account_create_account_unchecked">create_account_unchecked</a>(new_address: <b>address</b>): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
-    <b>let</b> new_account = <a href="create_signer.md#0x1_create_signer">create_signer</a>(new_address);
+    <b>let</b> <a href="new_account.md#0x1_new_account">new_account</a> = <a href="create_signer.md#0x1_create_signer">create_signer</a>(new_address);
     <b>let</b> authentication_key = <a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs_to_bytes">bcs::to_bytes</a>(&new_address);
     <b>assert</b>!(
         <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(&authentication_key) == 32,
@@ -943,7 +943,7 @@ is returned. This way, the caller of this function can publish additional resour
     <b>let</b> key_rotation_events = <a href="event.md#0x1_event_new_event_handle">event::new_event_handle</a>&lt;<a href="account.md#0x1_account_KeyRotationEvent">KeyRotationEvent</a>&gt;(guid_for_rotation);
 
     <b>move_to</b>(
-        &new_account,
+        &<a href="new_account.md#0x1_new_account">new_account</a>,
         <a href="account.md#0x1_account_Account">Account</a> {
             authentication_key,
             sequence_number: 0,
@@ -955,7 +955,7 @@ is returned. This way, the caller of this function can publish additional resour
         }
     );
 
-    new_account
+    <a href="new_account.md#0x1_new_account">new_account</a>
 }
 </code></pre>
 

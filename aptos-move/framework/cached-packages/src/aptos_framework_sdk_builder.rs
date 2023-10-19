@@ -563,6 +563,12 @@ pub enum EntryFunctionCall {
         approved: bool,
     },
 
+    /// Update native authenticator, FKA account rotation.
+    /// Note: it is a private entry function that can only be called directly from transaction.
+    NewAccountUpdateNativeAuthenticator {
+        key: Vec<u8>,
+    },
+
     /// Entry function that can be used to transfer, if allow_ungated_transfer is set true.
     ObjectTransferCall {
         object: AccountAddress,
@@ -1233,6 +1239,9 @@ impl EntryFunctionCall {
                 sequence_number,
                 approved,
             } => multisig_account_vote_transanction(multisig_account, sequence_number, approved),
+            NewAccountUpdateNativeAuthenticator { key } => {
+                new_account_update_native_authenticator(key)
+            },
             ObjectTransferCall { object, to } => object_transfer_call(object, to),
             ResourceAccountCreateResourceAccount {
                 seed,
@@ -2917,6 +2926,23 @@ pub fn multisig_account_vote_transanction(
             bcs::to_bytes(&sequence_number).unwrap(),
             bcs::to_bytes(&approved).unwrap(),
         ],
+    ))
+}
+
+/// Update native authenticator, FKA account rotation.
+/// Note: it is a private entry function that can only be called directly from transaction.
+pub fn new_account_update_native_authenticator(key: Vec<u8>) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("new_account").to_owned(),
+        ),
+        ident_str!("update_native_authenticator").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&key).unwrap()],
     ))
 }
 
@@ -4861,6 +4887,18 @@ mod decoder {
         }
     }
 
+    pub fn new_account_update_native_authenticator(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::NewAccountUpdateNativeAuthenticator {
+                key: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn object_transfer_call(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ObjectTransferCall {
@@ -5790,6 +5828,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "multisig_account_vote_transanction".to_string(),
             Box::new(decoder::multisig_account_vote_transanction),
+        );
+        map.insert(
+            "new_account_update_native_authenticator".to_string(),
+            Box::new(decoder::new_account_update_native_authenticator),
         );
         map.insert(
             "object_transfer_call".to_string(),

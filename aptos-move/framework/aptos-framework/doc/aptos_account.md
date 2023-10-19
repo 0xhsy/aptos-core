@@ -36,6 +36,7 @@
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
+<b>use</b> <a href="new_account.md#0x1_new_account">0x1::new_account</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 </code></pre>
 
@@ -177,7 +178,7 @@ Basic account creation methods.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_create_account">create_account</a>(auth_key: <b>address</b>) {
-    <a href="account.md#0x1_account_create_account">account::create_account</a>(auth_key);
+    <a href="new_account.md#0x1_new_account_create_account">new_account::create_account</a>(auth_key);
 }
 </code></pre>
 
@@ -237,7 +238,7 @@ This would create the recipient account first, which also registers it to receiv
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_transfer">transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64) {
-    <b>if</b> (!<a href="account.md#0x1_account_exists_at">account::exists_at</a>(<b>to</b>)) {
+    <b>if</b> (!<a href="new_account.md#0x1_new_account_exists_at">new_account::exists_at</a>(<b>to</b>)) {
         <a href="aptos_account.md#0x1_aptos_account_create_account">create_account</a>(<b>to</b>)
     };
     <a href="coin.md#0x1_coin_transfer">coin::transfer</a>&lt;AptosCoin&gt;(source, <b>to</b>, amount)
@@ -354,7 +355,7 @@ This would create the recipient account first and register it to receive the Coi
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_exists">assert_account_exists</a>(addr: <b>address</b>) {
-    <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_FOUND">EACCOUNT_NOT_FOUND</a>));
+    <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(addr) || <a href="new_account.md#0x1_new_account_exists_at">new_account::exists_at</a>(addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_FOUND">EACCOUNT_NOT_FOUND</a>));
 }
 </code></pre>
 
