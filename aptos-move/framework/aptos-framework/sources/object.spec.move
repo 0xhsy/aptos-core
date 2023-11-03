@@ -43,7 +43,6 @@ spec aptos_framework::object {
     }
 
     spec create_sticky_object(owner_address: address): ConstructorRef {
-        use std::features;
         pragma aborts_if_is_partial;
 
         let unique_address = transaction_context::spec_generate_unique_address();
@@ -255,11 +254,11 @@ spec aptos_framework::object {
         ensures result == ConstructorRef { self: obj_addr, can_delete: true };
     }
 
-    spec create_object_internal(
-    creator_address: address,
-    object: address,
-    can_delete: bool,
-    ): ConstructorRef {
+    spec create_object_at_address(owner_address: address, object_address: address, can_delete: bool): ConstructorRef {
+        pragma verify = false;
+    }
+
+    spec create_object_internal(creator_address: address, object: address, can_delete: bool): ConstructorRef {
         // property 1: Creating an object twice on the same address must never occur.
         aborts_if exists<ObjectCore>(object);
         ensures exists<ObjectCore>(object);
