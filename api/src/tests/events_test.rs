@@ -173,7 +173,7 @@ async fn test_module_events() {
         .await;
 
     let events = resp["events"].as_array().unwrap();
-    assert_eq!(events.len(), 8);
+    assert_eq!(events.len(), 9);
     // All events are module events
     assert!(events.iter().all(|c| c.get("guid").map_or(false, |d| d
         .get("account_address")
@@ -193,7 +193,7 @@ async fn test_get_events_by_struct_type_has_generic_type_parameter() {
         "/accounts/0x1/events/{}/coin",
         utf8_percent_encode(
             "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
-            NON_ALPHANUMERIC
+            NON_ALPHANUMERIC,
         )
     );
     let resp = context.expect_status_code(404).get(path.as_str()).await;

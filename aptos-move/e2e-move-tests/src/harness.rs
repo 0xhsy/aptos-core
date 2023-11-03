@@ -17,7 +17,10 @@ use aptos_language_e2e_tests::{
 use aptos_types::{
     access_path::AccessPath,
     account_address::AccountAddress,
-    account_config::{AccountResource, CoinStoreResource, CORE_CODE_ADDRESS},
+    account_config::{
+        fungible_store::FungibleStoreResource, object::ObjectGroupResource, AccountResource,
+        CoinStoreResource, CORE_CODE_ADDRESS,
+    },
     contract_event::ContractEvent,
     move_utils::MemberId,
     on_chain_config::{FeatureFlag, GasScheduleV2, OnChainConfig},
@@ -165,10 +168,14 @@ impl MoveHarness {
     /// Creates an account for the given static address. This address needs to be static so
     /// we can load regular Move code to there without need to rewrite code addresses.
     pub fn new_account_at(&mut self, addr: AccountAddress) -> Account {
+        self.new_account_with_balance_at(addr, 1_000_000_000_000_000)
+    }
+
+    pub fn new_account_with_balance_at(&mut self, addr: AccountAddress, balance: u64) -> Account {
         // The below will use the genesis keypair but that should be fine.
         let acc = Account::new_genesis_account(addr);
         // Mint the account 10M Aptos coins (with 8 decimals).
-        self.store_and_fund_account(&acc, 1_000_000_000_000_000, 10)
+        self.store_and_fund_account(&acc, balance, 10)
     }
 
     // Creates an account with a randomly generated address and key pair
@@ -256,12 +263,12 @@ impl MoveHarness {
         let seq_no = std::cmp::max(on_chain_seq_no, *seq_no_ref);
         *seq_no_ref = seq_no + 1;
         account
-            .transaction()
-            .sequence_number(seq_no)
-            .max_gas_amount(self.max_gas_per_txn)
-            .gas_unit_price(self.default_gas_unit_price)
-            .payload(payload)
-            .sign()
+                .transaction()
+                .sequence_number(seq_no)
+                .max_gas_amount(self.max_gas_per_txn)
+                .gas_unit_price(self.default_gas_unit_price)
+                .payload(payload)
+                .sign()
     }
 
     /// Runs a transaction, based on provided payload. If the transaction succeeds, any generated
@@ -291,9 +298,9 @@ impl MoveHarness {
     ) -> (TransactionGasLog, u64) {
         let txn = self.create_transaction_payload(account, payload);
         let (output, gas_log) = self
-            .executor
-            .execute_transaction_with_gas_profiler(txn)
-            .unwrap();
+                .executor
+                .execute_transaction_with_gas_profiler(txn)
+                .unwrap();
         if matches!(output.status(), TransactionStatus::Keep(_)) {
             self.executor.apply_write_set(output.write_set());
         }
@@ -375,8 +382,8 @@ impl MoveHarness {
     ) -> SignedTransaction {
         let code = package.extract_code();
         let mut metadata = package
-            .extract_metadata()
-            .expect("extracting package metadata must succeed");
+                .extract_metadata()
+                .expect("extracting package metadata must succeed");
         patch_metadata(&mut metadata);
         self.create_transaction_payload(
             account,
@@ -399,7 +406,7 @@ impl MoveHarness {
         patch_metadata: impl FnMut(&mut PackageMetadata),
     ) -> SignedTransaction {
         let package = BuiltPackage::build(path.to_owned(), options.unwrap_or_default())
-            .expect("building package must succeed");
+                .expect("building package must succeed");
         self.create_publish_built_package(account, &package, patch_metadata)
     }
 
@@ -420,9 +427,9 @@ impl MoveHarness {
             }))
         };
         let package_ref = package_arc
-            .as_ref()
-            .as_ref()
-            .expect("building package must succeed");
+                .as_ref()
+                .as_ref()
+                .expect("building package must succeed");
         self.create_publish_built_package(account, package_ref, patch_metadata)
     }
 
@@ -456,9 +463,9 @@ impl MoveHarness {
     ) -> (TransactionGasLog, u64) {
         let txn = self.create_publish_package(account, path, None, |_| {});
         let (output, gas_log) = self
-            .executor
-            .execute_transaction_with_gas_profiler(txn)
-            .unwrap();
+                .executor
+                .execute_transaction_with_gas_profiler(txn)
+                .unwrap();
         if matches!(output.status(), TransactionStatus::Keep(_)) {
             self.executor.apply_write_set(output.write_set());
         }
@@ -490,7 +497,7 @@ impl MoveHarness {
     pub fn fast_forward(&mut self, seconds: u64) {
         let current_time = self.executor.get_block_time();
         self.executor
-            .set_block_time(current_time + seconds * 1_000_000)
+                .set_block_time(current_time + seconds * 1_000_000)
     }
 
     pub fn new_epoch(&mut self) {
@@ -505,7 +512,7 @@ impl MoveHarness {
     ) {
         self.fast_forward(1);
         self.executor
-            .new_block_with_metadata(proposer, failed_proposer_indices);
+                .new_block_with_metadata(proposer, failed_proposer_indices);
     }
 
     // Executes the block of transactions inserting metadata at the start of the
@@ -518,7 +525,7 @@ impl MoveHarness {
     ) -> Vec<(TransactionStatus, u64)> {
         self.fast_forward(1);
         self.executor
-            .run_block_with_metadata(proposer, failed_proposer_indices, txns)
+                .run_block_with_metadata(proposer, failed_proposer_indices, txns)
     }
 
     pub fn get_events(&self) -> &[ContractEvent] {
@@ -531,7 +538,7 @@ impl MoveHarness {
 
     pub fn read_state_value_bytes(&self, state_key: &StateKey) -> Option<Vec<u8>> {
         self.read_state_value(state_key)
-            .map(|val| val.bytes().to_vec())
+                .map(|val| val.bytes().to_vec())
     }
 
     /// Reads the raw, serialized data of a resource.
@@ -541,7 +548,7 @@ impl MoveHarness {
         struct_tag: StructTag,
     ) -> Option<Vec<u8>> {
         let path =
-            AccessPath::resource_access_path(*addr, struct_tag).expect("access path in test");
+                AccessPath::resource_access_path(*addr, struct_tag).expect("access path in test");
         self.read_state_value_bytes(&StateKey::access_path(path))
     }
 
@@ -558,15 +565,15 @@ impl MoveHarness {
         )
     }
 
-    pub fn read_resource_metadata(
+    pub fn read_resource_group_metadata(
         &self,
         addr: &AccountAddress,
         struct_tag: StructTag,
     ) -> Option<Option<StateValueMetadata>> {
         self.read_state_value(&StateKey::access_path(
-            AccessPath::resource_access_path(*addr, struct_tag).expect("access path in test"),
+            AccessPath::resource_group_access_path(*addr, struct_tag),
         ))
-        .map(StateValue::into_metadata)
+                .map(StateValue::into_metadata)
     }
 
     pub fn read_resource_group(
@@ -576,7 +583,7 @@ impl MoveHarness {
     ) -> Option<BTreeMap<StructTag, Vec<u8>>> {
         let path = AccessPath::resource_group_access_path(*addr, struct_tag);
         self.read_state_value_bytes(&StateKey::access_path(path))
-            .map(|data| bcs::from_bytes(&data).unwrap())
+                .map(|data| bcs::from_bytes(&data).unwrap())
     }
 
     pub fn read_resource_from_resource_group<T: DeserializeOwned>(
@@ -600,8 +607,16 @@ impl MoveHarness {
 
     pub fn read_aptos_balance(&self, addr: &AccountAddress) -> u64 {
         self.read_resource::<CoinStoreResource>(addr, CoinStoreResource::struct_tag())
-            .unwrap()
-            .coin()
+                .map(|c| c.coin())
+                .unwrap_or(0)
+                + self
+                .read_resource_from_resource_group::<FungibleStoreResource>(
+                    &aptos_types::account_config::fungible_store::primary_store(addr),
+                    ObjectGroupResource::struct_tag(),
+                    FungibleStoreResource::struct_tag(),
+                )
+                .map(|c| c.balance())
+                .unwrap_or(0)
     }
 
     /// Write the resource data `T`.
@@ -614,7 +629,7 @@ impl MoveHarness {
         let path = AccessPath::resource_access_path(addr, struct_tag).expect("access path in test");
         let state_key = StateKey::access_path(path);
         self.executor
-            .write_state_value(state_key, bcs::to_bytes(data).unwrap());
+                .write_state_value(state_key, bcs::to_bytes(data).unwrap());
     }
 
     /// Enables features
@@ -623,13 +638,13 @@ impl MoveHarness {
         let enabled = enabled.into_iter().map(|f| f as u64).collect::<Vec<_>>();
         let disabled = disabled.into_iter().map(|f| f as u64).collect::<Vec<_>>();
         self.executor
-            .exec("features", "change_feature_flags", vec![], vec![
-                MoveValue::Signer(*acc.address())
-                    .simple_serialize()
-                    .unwrap(),
-                bcs::to_bytes(&enabled).unwrap(),
-                bcs::to_bytes(&disabled).unwrap(),
-            ]);
+                .exec("features", "change_feature_flags", vec![], vec![
+                    MoveValue::Signer(*acc.address())
+                            .simple_serialize()
+                            .unwrap(),
+                    bcs::to_bytes(&enabled).unwrap(),
+                    bcs::to_bytes(&disabled).unwrap(),
+                ]);
     }
 
     fn change_one_gas_param_from_default(&mut self, param: &str, param_value: u64) {
@@ -637,31 +652,31 @@ impl MoveHarness {
         // explicitly manipulating gas entries. Wasn't obvious from the gas code how to
         // do this differently then below, so perhaps improve this...
         let entries = AptosGasParameters::initial()
-            .to_on_chain_gas_schedule(aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION);
+                .to_on_chain_gas_schedule(aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION);
         let entries = entries
-            .into_iter()
-            .map(|(name, val)| {
-                if name == param {
-                    (name, param_value)
-                } else {
-                    (name, val)
-                }
-            })
-            .collect::<Vec<_>>();
+                .into_iter()
+                .map(|(name, val)| {
+                    if name == param {
+                        (name, param_value)
+                    } else {
+                        (name, val)
+                    }
+                })
+                .collect::<Vec<_>>();
         let gas_schedule = GasScheduleV2 {
             feature_version: aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION,
             entries,
         };
         let schedule_bytes = bcs::to_bytes(&gas_schedule).expect("bcs");
         self.executor
-            .exec("gas_schedule", "set_gas_schedule", vec![], vec![
-                MoveValue::Signer(AccountAddress::ONE)
-                    .simple_serialize()
-                    .unwrap(),
-                MoveValue::vector_u8(schedule_bytes)
-                    .simple_serialize()
-                    .unwrap(),
-            ]);
+                .exec("gas_schedule", "set_gas_schedule", vec![], vec![
+                    MoveValue::Signer(AccountAddress::ONE)
+                            .simple_serialize()
+                            .unwrap(),
+                    MoveValue::vector_u8(schedule_bytes)
+                            .simple_serialize()
+                            .unwrap(),
+                ]);
     }
 
     pub fn modify_gas_scaling(&mut self, gas_scaling_factor: u64) {
@@ -675,14 +690,14 @@ impl MoveHarness {
 
     pub fn sequence_number(&self, addr: &AccountAddress) -> u64 {
         self.read_resource::<AccountResource>(addr, AccountResource::struct_tag())
-            .unwrap()
-            .sequence_number()
+                .unwrap()
+                .sequence_number()
     }
 
     pub fn modify_gas_schedule_raw(&mut self, modify: impl FnOnce(&mut GasScheduleV2)) {
         let mut gas_schedule: GasScheduleV2 = self
-            .read_resource(&CORE_CODE_ADDRESS, GasScheduleV2::struct_tag())
-            .unwrap();
+                .read_resource(&CORE_CODE_ADDRESS, GasScheduleV2::struct_tag())
+                .unwrap();
         modify(&mut gas_schedule);
         self.set_resource(
             CORE_CODE_ADDRESS,
@@ -693,14 +708,14 @@ impl MoveHarness {
 
     pub fn modify_gas_schedule(&mut self, modify: impl FnOnce(&mut AptosGasParameters)) {
         let gas_schedule: GasScheduleV2 = self
-            .read_resource(&CORE_CODE_ADDRESS, GasScheduleV2::struct_tag())
-            .unwrap();
+                .read_resource(&CORE_CODE_ADDRESS, GasScheduleV2::struct_tag())
+                .unwrap();
         let feature_version = gas_schedule.feature_version;
         let mut gas_params = AptosGasParameters::from_on_chain_gas_schedule(
             &gas_schedule.to_btree_map(),
             feature_version,
         )
-        .unwrap();
+                .unwrap();
         modify(&mut gas_params);
         self.set_resource(
             CORE_CODE_ADDRESS,
@@ -727,7 +742,7 @@ impl MoveHarness {
         arguments: Vec<Vec<u8>>,
     ) -> Result<Vec<Vec<u8>>, Error> {
         self.executor
-            .execute_view_function(fun.module_id, fun.member_id, type_args, arguments)
+                .execute_view_function(fun, type_args, arguments)
     }
 
     /// Splits transactions into blocks based on passed `block_split``, and
@@ -790,7 +805,7 @@ impl MoveHarness {
                     outputs.append(&mut run_and_check_block(self, vec![(error, status)], idx));
                 }
                 outputs
-            },
+            }
             BlockSplit::SplitIntoThree {
                 first_len,
                 second_len,
@@ -808,7 +823,7 @@ impl MoveHarness {
                     first_len + second_len,
                 ));
                 outputs
-            },
+            }
         }
     }
 
@@ -828,27 +843,27 @@ impl BlockSplit {
     pub fn arbitrary(len: usize) -> BoxedStrategy<BlockSplit> {
         // skip last choice if lenght is not big enough for it.
         (0..(if len > 1 { 3 } else { 2 }))
-            .prop_flat_map(move |enum_type| {
-                // making running a test with a full block likely
-                match enum_type {
-                    0 => Just(BlockSplit::Whole).boxed(),
-                    1 => Just(BlockSplit::SingleTxnPerBlock).boxed(),
-                    _ => {
-                        // First is non-empty, and not the whole block here: [1, len)
-                        (1usize..len)
-                            .prop_flat_map(move |first| {
-                                // Second is non-empty, but can finish the block: [1, len - first]
-                                (Just(first), 1usize..len - first + 1)
-                            })
-                            .prop_map(|(first, second)| BlockSplit::SplitIntoThree {
-                                first_len: first,
-                                second_len: second,
-                            })
-                            .boxed()
-                    },
-                }
-            })
-            .boxed()
+                .prop_flat_map(move |enum_type| {
+                    // making running a test with a full block likely
+                    match enum_type {
+                        0 => Just(BlockSplit::Whole).boxed(),
+                        1 => Just(BlockSplit::SingleTxnPerBlock).boxed(),
+                        _ => {
+                            // First is non-empty, and not the whole block here: [1, len)
+                            (1usize..len)
+                                    .prop_flat_map(move |first| {
+                                        // Second is non-empty, but can finish the block: [1, len - first]
+                                        (Just(first), 1usize..len - first + 1)
+                                    })
+                                    .prop_map(|(first, second)| BlockSplit::SplitIntoThree {
+                                        first_len: first,
+                                        second_len: second,
+                                    })
+                                    .boxed()
+                        }
+                    }
+                })
+                .boxed()
     }
 }
 
@@ -881,7 +896,7 @@ impl MoveHarness {
         // We only want the trailing simple name.
         let fun = function_macro_value.split("::").last().unwrap();
         self.executor
-            .set_golden_file_at(&path.display().to_string(), fun)
+                .set_golden_file_at(&path.display().to_string(), fun)
     }
 }
 
