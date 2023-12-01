@@ -9,6 +9,7 @@ use anyhow::{bail, Context, Result};
 use aptos_indexer_grpc_utils::{
     cache_operator::CacheOperator,
     config::IndexerGrpcFileStoreConfig,
+    storage_format::StorageFormat,
     counters::{
         IndexerGrpcStep, DURATION_IN_SECS, LATEST_PROCESSED_VERSION, NUM_TRANSACTIONS_COUNT,
         TOTAL_SIZE_IN_BYTES, TRANSACTION_UNIX_TIMESTAMP,
@@ -48,6 +49,7 @@ pub struct Worker {
     fullnode_grpc_address: Url,
     /// File store config
     file_store: IndexerGrpcFileStoreConfig,
+    _storage_format: StorageFormat,
 }
 
 /// GRPC data status enum is to identify the data frame.
@@ -76,6 +78,7 @@ impl Worker {
         fullnode_grpc_address: Url,
         redis_main_instance_address: RedisUrl,
         file_store: IndexerGrpcFileStoreConfig,
+        storage_format: StorageFormat,
     ) -> Result<Self> {
         let redis_client = redis::Client::open(redis_main_instance_address.0.clone())
             .with_context(|| {
@@ -88,6 +91,7 @@ impl Worker {
             redis_client,
             file_store,
             fullnode_grpc_address,
+            storage_format,
         })
     }
 

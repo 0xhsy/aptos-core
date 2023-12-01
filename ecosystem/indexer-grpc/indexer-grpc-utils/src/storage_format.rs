@@ -16,8 +16,11 @@ pub enum StorageFormat {
     Bz2CompressedProto,
     GzipCompressionProto,
     UncompressedProto,
+    // Only used for legacy file format.
+    // Use by cache only.
     Base64UncompressedProto,
     // Only used for legacy file format.
+    // Use by file store only.
     JsonBase64UncompressedProto,
 }
 
