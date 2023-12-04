@@ -547,7 +547,10 @@ mod tests {
             })
             .collect();
         let bulck_value = redis::Value::Bulk(
-            serialized_transactions.into_iter().map(redis::Value::Data).collect(),
+            serialized_transactions
+                .into_iter()
+                .map(redis::Value::Data)
+                .collect(),
         );
         let keys = (1..1001)
             .map(|e| CacheEntryKey::new(e, StorageFormat::Base64UncompressedProto).to_string())
@@ -658,8 +661,11 @@ mod tests {
         };
         let cache_key = CacheEntryKey::new(123, StorageFormat::Base64UncompressedProto).to_string();
 
-        let cache_entry_builder = CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
-        let cache_entry: CacheEntry = cache_entry_builder.try_into().expect("Serialization failed.");
+        let cache_entry_builder =
+            CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
+        let cache_entry: CacheEntry = cache_entry_builder
+            .try_into()
+            .expect("Serialization failed.");
         let timestamp_in_seconds = 123_u64;
         let cmds = vec![MockCmd::new(
             redis::cmd("SET")
@@ -674,7 +680,8 @@ mod tests {
             CacheOperator::new(mock_connection, StorageFormat::Base64UncompressedProto);
         assert!(cache_operator
             .update_cache_transactions(vec![t])
-            .await.is_ok());
+            .await
+            .is_ok());
     }
 
     #[tokio::test]
@@ -689,9 +696,13 @@ mod tests {
             ..Default::default()
         };
         let timestamp_in_seconds = 12_u64;
-        let cache_key = CacheEntryKey::new(version, StorageFormat::Base64UncompressedProto).to_string();
-        let cache_entry_builder = CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
-        let cache_entry: CacheEntry = cache_entry_builder.try_into().expect("Serialization failed.");
+        let cache_key =
+            CacheEntryKey::new(version, StorageFormat::Base64UncompressedProto).to_string();
+        let cache_entry_builder =
+            CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
+        let cache_entry: CacheEntry = cache_entry_builder
+            .try_into()
+            .expect("Serialization failed.");
         let mut redis_pipeline = redis::pipe();
         redis_pipeline
             .cmd("SET")
