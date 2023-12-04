@@ -15,6 +15,7 @@ const JSON_FILE_TYPE: &str = "application/json";
 const BINARY_FILE_TYPE: &str = "application/octet-stream";
 // The environment variable to set the service account path.
 const SERVICE_ACCOUNT_ENV_VAR: &str = "SERVICE_ACCOUNT";
+const SERVICE_TYPE: &str = "file_worker";
 
 pub struct GcsFileStoreOperator {
     bucket_name: String,
@@ -58,12 +59,28 @@ impl FileStoreOperator for GcsFileStoreOperator {
 
     /// Gets the transactions files from the file store. version has to be a multiple of BLOB_STORAGE_SIZE.
     async fn get_transactions(&self, version: u64) -> anyhow::Result<Vec<Transaction>> {
+        let start_time = std::time::Instant::now();
         let file_entry_key = FileEntryKey::new(version, self.storage_format);
         let key_name = file_entry_key.to_string();
-        match Object::download(&self.bucket_name, key_name.as_str()).await {
+        let downloaded_file = Object::download(&self.bucket_name, key_name.as_str()).await;
+        tracing::info!(
+            start_version = version,
+            duration_in_secs = start_time.elapsed().as_secs_f64(),
+            service_type = SERVICE_TYPE,
+            "{}",
+            "Fetched data from GCS."
+        );
+        match downloaded_file {
             Ok(file) => {
                 let file_entry: FileEntry = FileEntry::from_bytes(file, self.storage_format);
                 let transactions_in_storage: TransactionsInStorage = file_entry.try_into()?;
+                tracing::info!(
+                    start_version = version,
+                    duration_in_secs = start_time.elapsed().as_secs_f64(),
+                    service_type = SERVICE_TYPE,
+                    "{}",
+                    "Deserialized data from GCS."
+                );
                 Ok(transactions_in_storage.transactions)
             },
             Err(cloud_storage::Error::Other(err)) => {

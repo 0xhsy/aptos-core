@@ -9,6 +9,8 @@ use anyhow::Context;
 use aptos_protos::transaction::v1::Transaction;
 use redis::{AsyncCommands, RedisError, RedisResult};
 
+const SERVICE_TYPE: &str = "cache_worker";
+
 // Configurations for cache.
 // Cache entries that are present.
 const CACHE_SIZE_ESTIMATION: u64 = 250_000_u64;
@@ -299,14 +301,25 @@ impl<T: redis::aio::ConnectionLike + Send> CacheOperator<T> {
         &mut self,
         start_version: u64,
     ) -> anyhow::Result<CacheBatchGetStatus> {
+        let start_time = std::time::Instant::now();
         let cache_coverage_status = self.check_cache_coverage_status(start_version).await;
         match cache_coverage_status {
-            Ok(CacheCoverageStatus::CacheHit(v)) => {
-                let cache_keys = (start_version..start_version + v)
+            Ok(CacheCoverageStatus::CacheHit(num_versions)) => {
+                let cache_keys = (start_version..start_version + num_versions)
                     .map(|e| CacheEntryKey::new(e, self.storage_format).to_string())
                     .collect::<Vec<String>>();
                 let encoded_transactions: Result<Vec<Vec<u8>>, RedisError> =
                     self.conn.mget(cache_keys).await;
+
+                tracing::info!(
+                    start_version,
+                    end_version = start_version + num_versions,
+                    num_of_transactions = num_versions,
+                    duration_in_secs = start_time.elapsed().as_secs_f64(),
+                    service_type = SERVICE_TYPE,
+                    "{}",
+                    "Fetched data from cache."
+                );
 
                 match encoded_transactions {
                     Ok(v) => {
@@ -328,6 +341,15 @@ impl<T: redis::aio::ConnectionLike + Send> CacheOperator<T> {
                                 cache_etry.try_into().expect("Deserialization failed.")
                             })
                             .collect();
+                        tracing::info!(
+                            start_version,
+                            end_version = start_version + num_versions,
+                            num_of_transactions = num_versions,
+                            duration_in_secs = start_time.elapsed().as_secs_f64(),
+                            service_type = SERVICE_TYPE,
+                            "{}",
+                            "Deserialized data from cache."
+                        );
                         Ok(CacheBatchGetStatus::Ok(transactions))
                     },
                     Err(err) => Err(err.into()),
