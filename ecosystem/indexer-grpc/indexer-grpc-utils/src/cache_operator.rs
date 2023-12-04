@@ -532,12 +532,26 @@ mod tests {
 
     #[tokio::test]
     async fn cache_batch_get_status_ok() {
+        let serialized_transactions: Vec<Vec<u8>> = (1..1001)
+            .map(|e| {
+                let transaction = Transaction {
+                    version: e,
+                    ..Transaction::default()
+                };
+                let cache_entry_builder =
+                    CacheEntryBuilder::new(transaction, StorageFormat::Base64UncompressedProto);
+                let cache_entry: CacheEntry = cache_entry_builder
+                    .try_into()
+                    .expect("Serialization failed.");
+                cache_entry.into_inner()
+            })
+            .collect();
         let bulck_value = redis::Value::Bulk(
-            (1..1001)
-                .map(|e| redis::Value::Data(format!("t{}", e).as_bytes().to_vec()))
-                .collect(),
+            serialized_transactions.into_iter().map(redis::Value::Data).collect(),
         );
-        let keys = (1..1001).map(|e| e.to_string()).collect::<Vec<String>>();
+        let keys = (1..1001)
+            .map(|e| CacheEntryKey::new(e, StorageFormat::Base64UncompressedProto).to_string())
+            .collect::<Vec<String>>();
         let cmds = vec![
             MockCmd::new(redis::cmd("GET").arg(CACHE_KEY_LATEST_VERSION), Ok("1003")),
             MockCmd::new(redis::cmd("MGET").arg(keys), Ok(bulck_value)),
@@ -634,17 +648,23 @@ mod tests {
     // Cache update cache transactions tests.
     #[tokio::test]
     async fn cache_update_cache_transactions_ok() {
-        let transactions = vec![Transaction {
+        let t = Transaction {
             version: 123,
+            timestamp: Some(aptos_protos::util::timestamp::Timestamp {
+                seconds: 123,
+                nanos: 0,
+            }),
             ..Default::default()
-        }];
-        let version = 123_u64;
-        let encoded_proto_data = String::from("123");
-        let timestamp_in_seconds = 12_u64;
+        };
+        let cache_key = CacheEntryKey::new(123, StorageFormat::Base64UncompressedProto).to_string();
+
+        let cache_entry_builder = CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
+        let cache_entry: CacheEntry = cache_entry_builder.try_into().expect("Serialization failed.");
+        let timestamp_in_seconds = 123_u64;
         let cmds = vec![MockCmd::new(
             redis::cmd("SET")
-                .arg(version)
-                .arg(encoded_proto_data.clone())
+                .arg(cache_key)
+                .arg(cache_entry.into_inner())
                 .arg("EX")
                 .arg(get_ttl_in_seconds(timestamp_in_seconds)),
             Ok("ok"),
@@ -653,25 +673,30 @@ mod tests {
         let mut cache_operator: CacheOperator<MockRedisConnection> =
             CacheOperator::new(mock_connection, StorageFormat::Base64UncompressedProto);
         assert!(cache_operator
-            .update_cache_transactions(transactions)
-            .await
-            .is_ok());
+            .update_cache_transactions(vec![t])
+            .await.is_ok());
     }
 
     #[tokio::test]
     async fn cache_update_cache_transactions_with_large_version_ok() {
-        let transactions = vec![Transaction {
-            version: 123,
-            ..Default::default()
-        }];
         let version = CACHE_SIZE_EVICTION_LOWER_BOUND + 100;
-        let encoded_proto_data = String::from("123");
+        let t = Transaction {
+            version,
+            timestamp: Some(aptos_protos::util::timestamp::Timestamp {
+                seconds: 12,
+                nanos: 0,
+            }),
+            ..Default::default()
+        };
         let timestamp_in_seconds = 12_u64;
+        let cache_key = CacheEntryKey::new(version, StorageFormat::Base64UncompressedProto).to_string();
+        let cache_entry_builder = CacheEntryBuilder::new(t.clone(), StorageFormat::Base64UncompressedProto);
+        let cache_entry: CacheEntry = cache_entry_builder.try_into().expect("Serialization failed.");
         let mut redis_pipeline = redis::pipe();
         redis_pipeline
             .cmd("SET")
-            .arg(version)
-            .arg(encoded_proto_data.clone())
+            .arg(cache_key)
+            .arg(cache_entry.into_inner())
             .arg("EX")
             .arg(get_ttl_in_seconds(timestamp_in_seconds));
         redis_pipeline
@@ -682,7 +707,7 @@ mod tests {
         let mut cache_operator: CacheOperator<MockRedisConnection> =
             CacheOperator::new(mock_connection, StorageFormat::Base64UncompressedProto);
         assert!(cache_operator
-            .update_cache_transactions(transactions)
+            .update_cache_transactions(vec![t])
             .await
             .is_ok());
     }
