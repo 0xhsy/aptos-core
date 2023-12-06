@@ -175,9 +175,15 @@ module aptos_framework::transaction_validation {
         _script_hash: vector<u8>,
     ) {
         let sender_addr = signer::address_of(&sender);
+        let fee_payer = if (multisig_account::is_multisig_account_as_fee_payer_enabled(multisig_account)) {
+            multisig_account
+        }
+        else {
+            sender_addr
+        };
         prologue_common(
             sender,
-            multisig_account,
+            fee_payer,
             txn_sequence_number,
             txn_public_key,
             txn_gas_price,
@@ -341,5 +347,25 @@ module aptos_framework::transaction_validation {
         // Increment sequence number
         let addr = signer::address_of(&account);
         account::increment_sequence_number(addr);
+    }
+
+    fun multisig_account_epilogue(
+        account: signer,
+        multisig_account: address,
+        storage_fee_refunded: u64,
+        txn_gas_price: u64,
+        txn_max_gas_units: u64,
+        gas_units_remaining: u64
+    ) {
+        let fee_payer = if (multisig_account::is_multisig_account_as_fee_payer_enabled(multisig_account)) {
+            multisig_account
+        }
+        else {
+            signer::address_of(&account)
+        };
+
+        epilogue_gas_payer(account, fee_payer, storage_fee_refunded, txn_gas_price, txn_max_gas_units, gas_units_remaining);
+
+        multisig_account::update_fee_payer_config(multisig_account); // enabled_multisig_account_as_fee_payer <- new_enabled_multisig_account_as_fee_payer
     }
 }
