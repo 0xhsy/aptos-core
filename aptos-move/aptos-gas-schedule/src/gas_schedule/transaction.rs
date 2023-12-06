@@ -101,7 +101,7 @@ crate::gas_schedule::macros::define_gas_parameters!(
         [
             storage_io_per_state_byte_write: InternalGasPerByte,
             { 0..=9 => "write_data.per_byte_in_key", 10.. => "storage_io_per_state_byte_write"},
-            5_000
+            2_000
         ],
         [
             write_data_per_byte_in_val: InternalGasPerByte,
@@ -112,7 +112,7 @@ crate::gas_schedule::macros::define_gas_parameters!(
         [
             free_write_bytes_quota: NumBytes,
             { 5.. => "free_write_bytes_quota" },
-            1024, // 1KB free per state write
+            0, // 1KB free per state write
         ],
         [
             free_event_bytes_quota: NumBytes,
