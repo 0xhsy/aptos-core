@@ -92,11 +92,16 @@ impl NetworkLoadTest for ThreeRegionSameCloudSimulationTest {
         let chaos = SwarmChaos::Bandwidth(bandwidth);
         ctx.swarm().inject_chaos(chaos)?;
 
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
+
         Ok(LoadDestination::FullnodesOtherwiseValidators)
     }
 
-    fn finish(&self, swarm: &mut dyn Swarm) -> anyhow::Result<()> {
-        swarm.remove_all_chaos()
+    fn finish(&self, ctx: &mut NetworkContext) -> anyhow::Result<()> {
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
+        ctx.swarm().remove_all_chaos()
     }
 }
 

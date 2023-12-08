@@ -297,15 +297,19 @@ pub fn create_multi_region_swarm_network_chaos(
 
 impl NetworkLoadTest for MultiRegionNetworkEmulationTest {
     fn setup(&self, ctx: &mut NetworkContext) -> anyhow::Result<LoadDestination> {
-        let chaos = self.create_netem_chaos(ctx.swarm());
-        ctx.swarm().inject_chaos(SwarmChaos::NetEm(chaos))?;
+        let chaos = self.create_netem_chaos(ctx.swarm);
+        ctx.swarm.inject_chaos(SwarmChaos::NetEm(chaos))?;
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
 
         Ok(LoadDestination::FullnodesOtherwiseValidators)
     }
 
-    fn finish(&self, swarm: &mut dyn Swarm) -> anyhow::Result<()> {
-        let chaos = self.create_netem_chaos(swarm);
-        swarm.remove_chaos(SwarmChaos::NetEm(chaos))
+    fn finish(&self, ctx: &mut NetworkContext) -> anyhow::Result<()> {
+        let chaos = self.create_netem_chaos(ctx.swarm);
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
+        ctx.swarm.remove_chaos(SwarmChaos::NetEm(chaos))
     }
 }
 

@@ -628,6 +628,10 @@ impl Swarm for LocalSwarm {
         todo!()
     }
 
+    async fn ensure_chaos_experiments_active(&self) -> Result<()> {
+        todo!()
+    }
+
     async fn ensure_no_validator_restart(&self) -> Result<()> {
         todo!()
     }

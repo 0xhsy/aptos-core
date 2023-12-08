@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
+    chaos::{ChaosConditionType, ConditionStatus, NetworkChaos},
     check_for_container_restart, create_k8s_client, delete_all_chaos, get_default_pfn_node_config,
     get_free_port, get_stateful_set_image, install_public_fullnode,
     node::K8sNode,
@@ -373,6 +374,34 @@ impl Swarm for K8sSwarm {
         Ok(())
     }
 
+    async fn ensure_chaos_experiments_active(&self) -> Result<()> {
+        let timeout_duration = Duration::from_secs(30);
+        let polling_interval = Duration::from_secs(5);
+
+        tokio::time::timeout(timeout_duration, async {
+            loop {
+                match are_chaos_experiments_active(self).await {
+                    Ok(true) => {
+                        info!("Chaos experiments are active");
+                        return anyhow::Ok(());
+                    },
+                    Ok(false) => {
+                        info!("Chaos experiments are not active, retrying...");
+                    },
+                    Err(e) => {
+                        warn!(
+                            "Error while checking chaos experiments status: {}. Retrying...",
+                            e
+                        );
+                    },
+                }
+                tokio::time::sleep(polling_interval).await;
+            }
+        })
+        .await?
+        .map_err(|_| anyhow!("Timed out waiting for chaos experiments to be active"))
+    }
+
     async fn ensure_no_validator_restart(&self) -> Result<()> {
         for validator in &self.validators {
             check_for_container_restart(
@@ -678,6 +707,25 @@ impl Drop for K8sSwarm {
             println!("Keeping kube_namespace {}", self.kube_namespace);
         }
     }
+}
+
+/// Checks if all chaos experiments are active
+async fn are_chaos_experiments_active(swarm: &K8sSwarm) -> Result<bool> {
+    let namespace = swarm.kube_namespace.clone();
+    let api: Api<NetworkChaos> = Api::namespaced(swarm.kube_client.clone(), &namespace);
+    let network_chaoses = api.list(&ListParams::default()).await?.items;
+
+    Ok(network_chaoses.iter().all(|network_chaos| {
+        network_chaos
+            .status
+            .as_ref()
+            .and_then(|status| status.conditions.as_ref())
+            .map_or(false, |conditions| {
+                conditions.iter().any(|c| {
+                    c.r#type == ChaosConditionType::AllInjected && c.status == ConditionStatus::True
+                })
+            })
+    }))
 }
 
 #[cfg(test)]

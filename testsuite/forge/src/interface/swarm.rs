@@ -88,6 +88,8 @@ pub trait Swarm: Sync {
     fn remove_chaos(&mut self, chaos: SwarmChaos) -> Result<()>;
     fn remove_all_chaos(&mut self) -> Result<()>;
 
+    async fn ensure_chaos_experiments_active(&self) -> Result<()>;
+
     async fn ensure_no_validator_restart(&self) -> Result<()>;
     async fn ensure_no_fullnode_restart(&self) -> Result<()>;
 

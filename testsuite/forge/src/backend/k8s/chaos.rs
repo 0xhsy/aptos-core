@@ -8,6 +8,8 @@ use crate::{
 use anyhow::bail;
 use aptos_logger::info;
 use aptos_sdk::{move_types::account_address::AccountAddress, types::PeerId};
+use kube::CustomResource;
+use serde::{Deserialize, Serialize};
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
@@ -285,4 +287,45 @@ impl K8sSwarm {
             INVALID_NODE_STRING
         }
     }
+}
+
+#[derive(CustomResource, Deserialize, Serialize, Clone, Debug)]
+#[kube(
+    group = "chaos-mesh.org",
+    version = "v1alpha1",
+    kind = "NetworkChaos",
+    status = "NetworkChaosStatus",
+    plural = "networkchaos",
+    namespaced,
+    schema = "disabled"
+)]
+pub struct NetworkChaosSpec {}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct NetworkChaosStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conditions: Option<Vec<ChaosCondition>>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct ChaosCondition {
+    #[serde(rename = "type")]
+    pub r#type: ChaosConditionType,
+
+    pub status: ConditionStatus,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum ConditionStatus {
+    False,
+    True,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum ChaosConditionType {
+    Selected,
+    AllInjected,
+    AllRecovered,
+    Paused,
 }

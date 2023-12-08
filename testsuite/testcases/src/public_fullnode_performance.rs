@@ -131,31 +131,37 @@ impl NetworkLoadTest for PFNPerformance {
 
         // Add CPU chaos to the swarm
         if self.add_cpu_chaos {
-            let cpu_chaos = self.create_cpu_chaos(ctx.swarm());
-            ctx.swarm().inject_chaos(SwarmChaos::CpuStress(cpu_chaos))?;
+            let cpu_chaos = self.create_cpu_chaos(ctx.swarm);
+            ctx.swarm.inject_chaos(SwarmChaos::CpuStress(cpu_chaos))?;
         }
 
         // Add network emulation to the swarm
         if self.add_network_emulation {
-            let network_chaos = self.create_network_emulation_chaos(ctx.swarm());
-            ctx.swarm().inject_chaos(SwarmChaos::NetEm(network_chaos))?;
+            let network_chaos = self.create_network_emulation_chaos(ctx.swarm);
+            ctx.swarm.inject_chaos(SwarmChaos::NetEm(network_chaos))?;
         }
+
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
 
         // Use the PFNs as the load destination
         Ok(LoadDestination::Peers(pfn_peer_ids))
     }
 
-    fn finish(&self, swarm: &mut dyn Swarm) -> Result<()> {
+    fn finish(&self, ctx: &mut NetworkContext) -> Result<()> {
+        ctx.runtime
+            .block_on(ctx.swarm.ensure_chaos_experiments_active())?;
+
         // Remove CPU chaos from the swarm
         if self.add_cpu_chaos {
-            let cpu_chaos = self.create_cpu_chaos(swarm);
-            swarm.remove_chaos(SwarmChaos::CpuStress(cpu_chaos))?;
+            let cpu_chaos = self.create_cpu_chaos(ctx.swarm);
+            ctx.swarm.remove_chaos(SwarmChaos::CpuStress(cpu_chaos))?;
         }
 
         // Remove network emulation from the swarm
         if self.add_network_emulation {
-            let network_chaos = self.create_network_emulation_chaos(swarm);
-            swarm.remove_chaos(SwarmChaos::NetEm(network_chaos))?;
+            let network_chaos = self.create_network_emulation_chaos(ctx.swarm);
+            ctx.swarm.remove_chaos(SwarmChaos::NetEm(network_chaos))?;
         }
 
         Ok(())
