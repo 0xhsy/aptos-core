@@ -8,7 +8,7 @@ use aptos_gas_schedule::{
 };
 use aptos_logger::{enabled, Level};
 use aptos_types::on_chain_config::{
-    ApprovedExecutionHashes, ConfigStorage, GasSchedule, GasScheduleV2, OnChainConfig,
+    ApprovedExecutionHashes, ConfigStorage, Features, GasSchedule, GasScheduleV2, OnChainConfig,
 };
 use aptos_vm_logging::{log_schema::AdapterLogSchema, speculative_log, speculative_warn};
 use aptos_vm_types::storage::{io_pricing::IoPricing, StorageGasParameters};
@@ -43,6 +43,7 @@ pub(crate) fn get_gas_config_from_storage(
 }
 
 pub(crate) fn get_gas_parameters(
+    features: &Features,
     config_storage: &impl ConfigStorage,
 ) -> (
     Result<AptosGasParameters, String>,
@@ -56,7 +57,7 @@ pub(crate) fn get_gas_parameters(
     let storage_gas_params = match &mut gas_params {
         Ok(gas_params) => {
             let storage_gas_params =
-                StorageGasParameters::new(gas_feature_version, gas_params, config_storage);
+                StorageGasParameters::new(gas_feature_version, features, gas_params, config_storage);
 
             // Overwrite table io gas parameters with global io pricing.
             let g = &mut gas_params.natives.table;
