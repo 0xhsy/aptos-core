@@ -25,6 +25,7 @@ futures = { workspace = true }
 futures-channel = { workspace = true }
 tokio = { workspace = true }
 tokio-retry = { workspace = true }
+aptos-bounded-executor = { workspace = true }
 
 [dev-dependencies]
 aptos-consensus-types = { workspace = true, features = ["fuzzing"] }
