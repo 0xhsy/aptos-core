@@ -43,12 +43,14 @@ use std::{
 
 pub mod analyzed_transaction;
 pub mod authenticator;
+pub mod block_epilogue;
 mod change_set;
 mod module;
 mod multisig;
 mod script;
 pub mod signature_verified_transaction;
 
+use self::block_epilogue::{BlockEndInfo, BlockEpiloguePayload};
 use crate::{
     contract_event::TransactionEvent, executable::ModulePath, fee_statement::FeeStatement,
     proof::accumulator::InMemoryEventAccumulator, validator_txn::ValidatorTransaction,
@@ -1236,31 +1238,31 @@ impl TransactionOutputProvider for TransactionOutput {
 #[derive(Debug)]
 pub struct BlockOutput<Output: Debug> {
     transaction_outputs: Vec<Output>,
-    // TODO add block_limit_info
+    block_end_info: Option<BlockEndInfo>,
 }
 
 impl<Output: Debug> BlockOutput<Output> {
-    pub fn new(transaction_outputs: Vec<Output>) -> Self {
+    pub fn new(transaction_outputs: Vec<Output>, block_end_info: Option<BlockEndInfo>) -> Self {
         Self {
             transaction_outputs,
+            block_end_info,
         }
     }
 
     /// If block limit is not set (i.e. in tests), we can safely unwrap here
     pub fn into_transaction_outputs_forced(self) -> Vec<Output> {
         // TODO assert there is no block limit info?
-        // assert!(self.block_limit_info_transaction.is_none());
+        assert!(self.block_end_info.is_none());
         self.transaction_outputs
     }
 
-    // TODO add block_limit_info
-    pub fn into_inner(self) -> Vec<Output> {
-        self.transaction_outputs
+    pub fn into_inner(self) -> (Vec<Output>, Option<BlockEndInfo>) {
+        (self.transaction_outputs, self.block_end_info)
     }
 
     pub fn get_transaction_outputs_forced(&self) -> &[Output] {
         // TODO assert there is no block limit info?
-        // assert!(self.block_limit_info_transaction.is_none());
+        assert!(self.block_end_info.is_none());
         &self.transaction_outputs
     }
 }
@@ -1829,6 +1831,12 @@ pub enum Transaction {
 
     /// Transaction that only proposed by a validator mainly to update on-chain configs.
     ValidatorTransaction(ValidatorTransaction),
+
+    /// Transaction to let the executor update the global state tree and record the root hash
+    /// in the TransactionInfo
+    /// The hash value inside is unique block id which can generate unique hash of state checkpoint transaction
+    /// Replaces StateCheckpoint, with optionally having more data.
+    BlockEpilogue(BlockEpiloguePayload),
 }
 
 impl Transaction {
@@ -1842,6 +1850,13 @@ impl Transaction {
     pub fn try_as_block_metadata(&self) -> Option<&BlockMetadata> {
         match self {
             Transaction::BlockMetadata(v1) => Some(v1),
+            _ => None,
+        }
+    }
+
+    pub fn try_as_block_epilogue(&self) -> Option<&BlockEpiloguePayload> {
+        match self {
+            Transaction::BlockEpilogue(v1) => Some(v1),
             _ => None,
         }
     }
@@ -1865,6 +1880,8 @@ impl Transaction {
             // TODO: display proper information for client
             Transaction::StateCheckpoint(_) => String::from("state_checkpoint"),
             // TODO: display proper information for client
+            Transaction::BlockEpilogue(_) => String::from("block_epilogue"),
+            // TODO: display proper information for client
             Transaction::ValidatorTransaction(_) => String::from("validator_transaction"),
         }
     }
@@ -1875,6 +1892,7 @@ impl Transaction {
             Transaction::GenesisTransaction(_) => "genesis_transaction",
             Transaction::BlockMetadata(_) => "block_metadata",
             Transaction::StateCheckpoint(_) => "state_checkpoint",
+            Transaction::BlockEpilogue(_) => "block_epilogue",
             Transaction::ValidatorTransaction(_) => "validator_transaction",
         }
     }

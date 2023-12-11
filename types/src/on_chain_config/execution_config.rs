@@ -77,7 +77,7 @@ impl OnChainExecutionConfig {
                 io_gas_effective_multiplier: 1,
                 block_output_limit: None,
                 conflict_penalty_window: 1,
-                add_block_limit_outcome_onchain: false,
+                add_block_limit_outcome_onchain: true,
                 use_granular_resource_group_conflicts: false,
             },
             transaction_deduper_type: TransactionDeduperType::TxnHashAndAuthenticatorV1,

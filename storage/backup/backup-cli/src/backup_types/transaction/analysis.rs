@@ -116,6 +116,7 @@ impl TransactionAnalysis {
             GenesisTransaction(_)
             | BlockMetadata(_)
             | StateCheckpoint(_)
+            | BlockEpilogue(_)
             | ValidatorTransaction(_) => bcs::to_bytes(txn).expect("Txn should serialize").len(),
         }
     }
