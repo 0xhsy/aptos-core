@@ -13,7 +13,7 @@ use aptos_indexer_grpc_utils::{
         IndexerGrpcStep, DURATION_IN_SECS, LATEST_PROCESSED_VERSION, NUM_TRANSACTIONS_COUNT,
         TOTAL_SIZE_IN_BYTES, TRANSACTION_UNIX_TIMESTAMP,
     },
-    create_grpc_client,
+    create_grpc_client_with_retry,
     file_store_operator::{
         FileStoreMetadata, FileStoreOperator, GcsFileStoreOperator, LocalFileStoreOperator,
     },
@@ -23,10 +23,11 @@ use aptos_indexer_grpc_utils::{
 use aptos_moving_average::MovingAverage;
 use aptos_protos::internal::fullnode::v1::{
     stream_status::StatusType, transactions_from_node_response::Response,
-    GetTransactionsFromNodeRequest, TransactionsFromNodeResponse,
+    GetTransactionsFromNodeRequest, TransactionsFromNodeResponse, fullnode_data_client::FullnodeDataClient,
 };
 use futures::{self, StreamExt};
 use prost::Message;
+use tonic::transport::Channel;
 use tracing::{error, info};
 use url::Url;
 
@@ -42,12 +43,9 @@ const CACHE_WORKER_WAIT_FOR_FILE_STORE_IN_SECS: u64 = 5;
 const SERVICE_TYPE: &str = "cache_worker";
 
 pub struct Worker {
-    /// Redis client.
-    redis_client: redis::Client,
-    /// Fullnode grpc address.
-    fullnode_grpc_address: Url,
-    /// File store config
-    file_store: IndexerGrpcFileStoreConfig,
+    cache_operator: CacheOperator<redis::aio::ConnectionManager>,
+    file_store_operator: Box<dyn FileStoreOperator>,
+    fullnode_grpc_client: FullnodeDataClient<Channel>,
 }
 
 /// GRPC data status enum is to identify the data frame.
@@ -72,23 +70,16 @@ pub(crate) enum GrpcDataStatus {
 }
 
 impl Worker {
-    pub async fn new(
-        fullnode_grpc_address: Url,
-        redis_main_instance_address: RedisUrl,
-        file_store: IndexerGrpcFileStoreConfig,
-    ) -> Result<Self> {
-        let redis_client = redis::Client::open(redis_main_instance_address.0.clone())
-            .with_context(|| {
-                format!(
-                    "Failed to create redis client for {}",
-                    redis_main_instance_address
-                )
-            })?;
-        Ok(Self {
-            redis_client,
-            file_store,
-            fullnode_grpc_address,
-        })
+    pub fn new(
+        cache_operator: CacheOperator<redis::aio::ConnectionManager>,
+        file_store_operator: Box<dyn FileStoreOperator>,
+        fullnode_grpc_client: FullnodeDataClient<Channel>,
+    ) -> Self {
+        Self {
+            cache_operator,
+            file_store_operator,
+            fullnode_grpc_client,
+        }
     }
 
     /// The main loop of the worker is:
@@ -102,56 +93,32 @@ impl Worker {
     /// TODO: Use the ! return type when it is stable.
     /// TODO: Rewrite logic to actually conform to this description
     pub async fn run(&mut self) -> Result<()> {
-        // Re-connect if lost.
-        loop {
-            let conn = self
-                .redis_client
-                .get_tokio_connection_manager()
-                .await
-                .context("Get redis connection failed.")?;
-            let mut rpc_client = create_grpc_client(self.fullnode_grpc_address.clone()).await;
+        // TODO: this is unnecessary
+        // TODO: move chain id check somewhere around here
+        self.file_store_operator.verify_storage_bucket_existence().await;
+        // TODO: Let's change this to ensure that the filestore metadata is already there to avoid a conflict
+        let starting_version = self.file_store_operator.get_latest_version().await.unwrap_or(0);
 
-            // 1. Fetch metadata.
-            let file_store_operator: Box<dyn FileStoreOperator> = match &self.file_store {
-                IndexerGrpcFileStoreConfig::GcsFileStore(gcs_file_store) => {
-                    Box::new(GcsFileStoreOperator::new(
-                        gcs_file_store.gcs_file_store_bucket_name.clone(),
-                        gcs_file_store
-                            .gcs_file_store_service_account_key_path
-                            .clone(),
-                    ))
-                },
-                IndexerGrpcFileStoreConfig::LocalFileStore(local_file_store) => Box::new(
-                    LocalFileStoreOperator::new(local_file_store.local_file_store_path.clone()),
-                ),
-            };
-            // TODO: this is unnecessary
-            // TODO: move chain id check somewhere around here
-            file_store_operator.verify_storage_bucket_existence().await;
-            // TODO: Let's change this to ensure that the filestore metadata is already there to avoid a conflict
-            let starting_version = file_store_operator.get_latest_version().await.unwrap_or(0);
+        let file_store_metadata = self.file_store_operator.get_file_store_metadata().await;
 
-            let file_store_metadata = file_store_operator.get_file_store_metadata().await;
+        // 2. Start streaming RPC.
+        let request = tonic::Request::new(GetTransactionsFromNodeRequest {
+            starting_version: Some(starting_version),
+            ..Default::default()
+        });
 
-            // 2. Start streaming RPC.
-            let request = tonic::Request::new(GetTransactionsFromNodeRequest {
-                starting_version: Some(starting_version),
-                ..Default::default()
-            });
-
-            let response = rpc_client
-                .get_transactions_from_node(request)
-                .await
-                .with_context(|| {
-                    format!(
-                        "Failed to get transactions from node at starting version {}",
-                        starting_version
-                    )
-                })?;
-
-            // 3&4. Infinite streaming until error happens. Either stream ends or worker crashes.
-            process_streaming_response(conn, file_store_metadata, response.into_inner()).await?;
-        }
+        let _response = self.fullnode_grpc_client
+            .get_transactions_from_node(request)
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to get transactions from node at starting version {}",
+                    starting_version
+                )
+            })?;
+        Ok(())
+        // 3&4. Infinite streaming until error happens. Either stream ends or worker crashes.
+        // process_streaming_response(conn, file_store_metadata, response.into_inner()).await?;
     }
 }
 
