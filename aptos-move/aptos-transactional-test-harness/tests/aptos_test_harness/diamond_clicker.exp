@@ -1,0 +1,112 @@
+processed 3 tasks
+
+task 1 'publish'. lines 3-34:
+Error: error[E14004]: lambda parameter only permitted as parameter to inlined function
+   ┌─ TEMPFILE:23:69
+   │  
+23 │           vector::for_each_mut<InnerStruct>(&mut anystruct.any_field, |field| {
+   │ ╭─────────────────────────────────────────────────────────────────────^
+24 │ │             debug::print(field); // INTERNAL TEST ERROR: INTERNAL VM INVARIANT VIOLATION
+25 │ │             // debug::print(b"foo"); // INTERNAL TEST ERROR: INTERNAL VM INVARIANT VIOLATION
+26 │ │             // let field: &mut InnerStruct = field;
+27 │ │             // field.amount = field.amount + upgrade_amount;
+28 │ │         });
+   │ ╰─────────^ unexpected lambda
+Backtrace: Backtrace [
+    { fn: "std::backtrace_rs::backtrace::libunwind::trace", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/../../backtrace/src/backtrace/libunwind.rs", line: 93 },
+    { fn: "std::backtrace_rs::backtrace::trace_unsynchronized", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/../../backtrace/src/backtrace/mod.rs", line: 66 },
+    { fn: "std::backtrace::Backtrace::create", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/backtrace.rs", line: 332 },
+    { fn: "move_compiler::diagnostics::Diagnostic::add_backtrace", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/diagnostics/mod.rs", line: 303 },
+    { fn: "move_compiler::diagnostics::Diagnostic::new", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/diagnostics/mod.rs", line: 287 },
+    { fn: "move_compiler::hlir::translate::exp_impl", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1410 },
+    { fn: "move_compiler::hlir::translate::exp_loop::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1023 },
+    { fn: "core::ops::function::FnOnce::call_once{{vtable.shim}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 250 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "move_compiler::hlir::translate::exp_", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1052 },
+    { fn: "move_compiler::hlir::translate::exp", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 803 },
+    { fn: "move_compiler::hlir::translate::exp_evaluation_order", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1435 },
+    { fn: "move_compiler::hlir::translate::exp_impl", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1327 },
+    { fn: "move_compiler::hlir::translate::exp_loop::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1023 },
+    { fn: "core::ops::function::FnOnce::call_once{{vtable.shim}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 250 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "move_compiler::hlir::translate::exp_", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1052 },
+    { fn: "move_compiler::hlir::translate::exp", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 803 },
+    { fn: "move_compiler::hlir::translate::exp_impl", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1209 },
+    { fn: "move_compiler::hlir::translate::exp_loop::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1023 },
+    { fn: "core::ops::function::FnOnce::call_once{{vtable.shim}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 250 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "move_compiler::hlir::translate::exp_", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 1052 },
+    { fn: "move_compiler::hlir::translate::statement", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 632 },
+    { fn: "move_compiler::hlir::translate::block", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 562 },
+    { fn: "move_compiler::hlir::translate::function_body_defined", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 350 },
+    { fn: "move_compiler::hlir::translate::function_body", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 335 },
+    { fn: "move_compiler::hlir::translate::function", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 292 },
+    { fn: "move_compiler::hlir::translate::module::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 229 },
+    { fn: "move_compiler::shared::unique_map::UniqueMap<K,V>::map::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/shared/unique_map.rs", line: 91 },
+    { fn: "core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &mut F>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 305 },
+    { fn: "core::option::Option<T>::map", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/option.rs", line: 1075 },
+    { fn: "<core::iter::adapters::map::Map<I,F> as core::iter::traits::iterator::Iterator>::next", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/iter/adapters/map.rs", line: 103 },
+    { fn: "<alloc::vec::Vec<T> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<T,I>>::from_iter", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/vec/spec_from_iter_nested.rs", line: 26 },
+    { fn: "<alloc::vec::Vec<T> as alloc::vec::spec_from_iter::SpecFromIter<T,I>>::from_iter", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/vec/spec_from_iter.rs", line: 33 },
+    { fn: "<alloc::vec::Vec<T> as core::iter::traits::collect::FromIterator<T>>::from_iter", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/vec/mod.rs", line: 2696 },
+    { fn: "core::iter::traits::iterator::Iterator::collect", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/iter/traits/iterator.rs", line: 1895 },
+    { fn: "<alloc::collections::btree::map::BTreeMap<K,V> as core::iter::traits::collect::FromIterator<(K,V)>>::from_iter", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/collections/btree/map.rs", line: 2253 },
+    { fn: "core::iter::traits::iterator::Iterator::collect", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/iter/traits/iterator.rs", line: 1895 },
+    { fn: "move_compiler::shared::unique_map::UniqueMap<K,V>::map", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/shared/unique_map.rs", line: 88 },
+    { fn: "move_compiler::hlir::translate::module", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 229 },
+    { fn: "move_compiler::hlir::translate::modules::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 207 },
+    { fn: "core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &mut F>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 305 },
+    { fn: "core::option::Option<T>::map", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/option.rs", line: 1075 },
+    { fn: "<core::iter::adapters::map::Map<I,F> as core::iter::traits::iterator::Iterator>::next", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/iter/adapters/map.rs", line: 103 },
+    { fn: "move_compiler::shared::unique_map::UniqueMap<K,V>::maybe_from_iter", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/shared/unique_map.rs", line: 180 },
+    { fn: "move_compiler::hlir::translate::modules", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 208 },
+    { fn: "move_compiler::hlir::translate::program", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/hlir/translate.rs", line: 195 },
+    { fn: "move_compiler::command_line::compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 857 },
+    { fn: "move_compiler::command_line::compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 848 },
+    { fn: "move_compiler::command_line::compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 831 },
+    { fn: "move_compiler::command_line::compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 814 },
+    { fn: "move_compiler::command_line::compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 797 },
+    { fn: "move_compiler::command_line::compiler::SteppedCompiler<_>::run_impl", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 283 },
+    { fn: "move_compiler::command_line::compiler::SteppedCompiler<_>::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 340 },
+    { fn: "move_compiler::command_line::compiler::Compiler::run::{{closure}}", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 226 },
+    { fn: "core::result::Result<T,E>::and_then", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/result.rs", line: 1319 },
+    { fn: "move_compiler::command_line::compiler::Compiler::run", file: "/Users/brm/code/aptos-core/third_party/move/move-compiler/src/command_line/compiler.rs", line: 225 },
+    { fn: "move_transactional_test_runner::framework::compile_source_unit", file: "/Users/brm/code/aptos-core/third_party/move/testing-infra/transactional-test-runner/src/framework.rs", line: 745 },
+    { fn: "move_transactional_test_runner::framework::MoveTestAdapter::compile_module", file: "/Users/brm/code/aptos-core/third_party/move/testing-infra/transactional-test-runner/src/framework.rs", line: 217 },
+    { fn: "move_transactional_test_runner::framework::MoveTestAdapter::handle_command", file: "/Users/brm/code/aptos-core/third_party/move/testing-infra/transactional-test-runner/src/framework.rs", line: 354 },
+    { fn: "move_transactional_test_runner::framework::handle_known_task", file: "/Users/brm/code/aptos-core/third_party/move/testing-infra/transactional-test-runner/src/framework.rs", line: 942 },
+    { fn: "move_transactional_test_runner::framework::run_test_impl", file: "/Users/brm/code/aptos-core/third_party/move/testing-infra/transactional-test-runner/src/framework.rs", line: 879 },
+    { fn: "aptos_transactional_test_harness::aptos_test_harness::run_aptos_test", file: "./src/aptos_test_harness.rs", line: 984 },
+    { fn: "datatest_stable::runner::Requirements::expand::{{closure}}::{{closure}}", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/datatest-stable-0.1.3/src/runner.rs", line: 59 },
+    { fn: "libtest_mimic::Trial::test::{{closure}}", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libtest-mimic-0.5.2/src/lib.rs", line: 110 },
+    { fn: "core::ops::function::FnOnce::call_once{{vtable.shim}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 250 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "libtest_mimic::run_single::{{closure}}", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libtest-mimic-0.5.2/src/lib.rs", line: 500 },
+    { fn: "<core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/panic/unwind_safe.rs", line: 271 },
+    { fn: "std::panicking::try::do_call", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panicking.rs", line: 500 },
+    { fn: "___rust_try" },
+    { fn: "std::panicking::try", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panicking.rs", line: 464 },
+    { fn: "std::panic::catch_unwind", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panic.rs", line: 142 },
+    { fn: "libtest_mimic::run_single", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libtest-mimic-0.5.2/src/lib.rs", line: 500 },
+    { fn: "libtest_mimic::run::{{closure}}", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libtest-mimic-0.5.2/src/lib.rs", line: 471 },
+    { fn: "<F as threadpool::FnBox>::call_box", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/threadpool-1.8.1/src/lib.rs", line: 95 },
+    { fn: "threadpool::spawn_in_pool::{{closure}}", file: "/Users/brm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/threadpool-1.8.1/src/lib.rs", line: 769 },
+    { fn: "std::sys_common::backtrace::__rust_begin_short_backtrace", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/sys_common/backtrace.rs", line: 135 },
+    { fn: "std::thread::Builder::spawn_unchecked_::{{closure}}::{{closure}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/thread/mod.rs", line: 529 },
+    { fn: "<core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/panic/unwind_safe.rs", line: 271 },
+    { fn: "std::panicking::try::do_call", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panicking.rs", line: 500 },
+    { fn: "___rust_try" },
+    { fn: "std::panicking::try", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panicking.rs", line: 464 },
+    { fn: "std::panic::catch_unwind", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/panic.rs", line: 142 },
+    { fn: "std::thread::Builder::spawn_unchecked_::{{closure}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/thread/mod.rs", line: 528 },
+    { fn: "core::ops::function::FnOnce::call_once{{vtable.shim}}", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/core/src/ops/function.rs", line: 250 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "<alloc::boxed::Box<F,A> as core::ops::function::FnOnce<Args>>::call_once", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/alloc/src/boxed.rs", line: 1993 },
+    { fn: "std::sys::unix::thread::Thread::new::thread_start", file: "/rustc/d5c2e9c342b358556da91d61ed4133f6f50fc0c3/library/std/src/sys/unix/thread.rs", line: 108 },
+    { fn: "__pthread_joiner_wake" },
+]
+
+
+
+task 2 'run'. lines 36-36:
+Error: Failed to fetch account resource under address 0x0000000000000000000000000000000000000000000000000000000000001234. Has the account been created?

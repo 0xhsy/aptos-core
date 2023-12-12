@@ -1,0 +1,7 @@
+processed 3 tasks
+
+task 1 'publish'. lines 3-45:
+Error: Failed to fetch account resource under address 0x0000000000000000000000000000000000000000000000000000000000000042. Has the account been created?
+
+task 2 'run'. lines 47-47:
+Error: Failed to fetch account resource under address 0x0000000000000000000000000000000000000000000000000000000000001234. Has the account been created?
