@@ -20,7 +20,7 @@ use aptos_indexer_grpc_utils::{
         IndexerGrpcStep, DURATION_IN_SECS, LATEST_PROCESSED_VERSION, NUM_TRANSACTIONS_COUNT,
         TOTAL_SIZE_IN_BYTES, TRANSACTION_UNIX_TIMESTAMP,
     },
-    file_store_operator::{FileStoreOperator, GcsFileStoreOperator, LocalFileStoreOperator},
+    file_store_operator::FileStoreOperator,
     time_diff_since_pb_timestamp_in_secs, timestamp_to_unixtime,
     types::RedisUrl,
     EncodedTransactionWithVersion,
