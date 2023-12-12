@@ -477,6 +477,7 @@ impl<'a> NumberOperationAnalysis<'a> {
                 },
                 _ => {},
             }
+            Ok(())
         };
         e.visit(visitor);
     }
