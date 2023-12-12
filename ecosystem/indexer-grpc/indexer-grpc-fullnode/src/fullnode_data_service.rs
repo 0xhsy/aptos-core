@@ -1,6 +1,6 @@
 // Copyright © Aptos Foundation
 
-use crate::{stream_coordinator::IndexerStreamCoordinator, ServiceContext};
+use crate::{stream_coordinator::IndexerStreamCoordinator, ServiceContext, counters::CHANNEL_SIZE};
 use aptos_indexer_grpc_utils::counters::{log_grpc_step_fullnode, IndexerGrpcStep};
 use aptos_logger::{error, info};
 use aptos_moving_average::MovingAverage;
@@ -16,7 +16,6 @@ use tonic::{Request, Response, Status};
 
 pub struct FullnodeDataService {
     pub service_context: ServiceContext,
-    pub pool: Arc<Pool>,
     pub enable_verbose_logging: bool,
 }
 
