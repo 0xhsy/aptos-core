@@ -6,8 +6,10 @@ pub mod worker;
 
 use anyhow::{Context, Result};
 use aptos_indexer_grpc_server_framework::RunnableConfig;
-use aptos_indexer_grpc_utils::{config::IndexerGrpcFileStoreConfig, types::RedisUrl,
-cache_operator::CacheOperator, create_grpc_client_with_retry};
+use aptos_indexer_grpc_utils::{
+    cache_operator::CacheOperator, config::IndexerGrpcFileStoreConfig,
+    create_grpc_client_with_retry, types::RedisUrl,
+};
 use serde::{Deserialize, Serialize};
 use url::Url;
 use worker::Worker;
@@ -40,11 +42,7 @@ impl RunnableConfig for IndexerGrpcCacheWorkerConfig {
             let cache_operator = CacheOperator::new(conn);
             let fullnode_grpc_client =
                 create_grpc_client_with_retry(self.fullnode_grpc_address.clone()).await?;
-            let mut worker = Worker::new(
-                cache_operator,
-                file_store_operator,
-                fullnode_grpc_client,
-            );
+            let mut worker = Worker::new(cache_operator, file_store_operator, fullnode_grpc_client);
             worker.run().await?;
         }
     }

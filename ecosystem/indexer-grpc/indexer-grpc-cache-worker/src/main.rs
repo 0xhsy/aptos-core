@@ -9,6 +9,8 @@ use clap::Parser;
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = ServerArgs::parse();
-    args.run::<IndexerGrpcCacheWorkerConfig>().await.expect("Failed to cache worker");
+    args.run::<IndexerGrpcCacheWorkerConfig>()
+        .await
+        .expect("Failed to cache worker");
     Ok(())
 }

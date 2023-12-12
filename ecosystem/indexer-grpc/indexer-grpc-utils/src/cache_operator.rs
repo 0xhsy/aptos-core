@@ -250,6 +250,16 @@ impl<T: redis::aio::ConnectionLike + Send + Clone> CacheOperator<T> {
         }
     }
 
+    // Overwrite the latest version in cache.
+    // Only call this function during cache worker startup.
+    pub async fn overwrite_cache_latest_version(&mut self, version: u64) -> anyhow::Result<()> {
+        self.conn
+            .set(CACHE_KEY_LATEST_VERSION, version)
+            .await
+            .context("Redis latest version overwrite failed.")?;
+        Ok(())
+    }
+
     // Update the latest version in cache.
     pub async fn update_cache_latest_version(
         &mut self,
