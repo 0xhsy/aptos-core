@@ -97,6 +97,7 @@ impl Worker {
     pub async fn run(&mut self) -> Result<()> {
         // Step 1.
         let cache_start_status = self.get_cache_start_status().await?;
+        info!("Cache start status");
         let starting_version = match cache_start_status {
             CacheStartStatus::Ok(start_version) => start_version,
             CacheStartStatus::FileStoreIsNotReady => {
