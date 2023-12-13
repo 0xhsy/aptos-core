@@ -380,6 +380,7 @@ where
             .sum();
         let target_version = ledger_info_with_sigs.ledger_info().version();
         if first_version + to_commit as u64 != target_version + 1 {
+            panic!();
             return Err(ExecutorError::BadNumTxnsToCommit {
                 first_version,
                 to_commit,
